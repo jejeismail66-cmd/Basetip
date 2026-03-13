@@ -460,7 +460,16 @@
   // ── APP global object (for onclick= handlers) ───────────────────
   window.APP = {
     openModal: () => modal.open(),
-    disconnect: () => modal.disconnect(),
+    disconnect: async () => {
+      try { await modal.disconnect(); } catch(e) { console.log(e); }
+      // Force UI reset in case event doesn't fire
+      connectedAccount = null;
+      walletProvider = null;
+      document.getElementById('walletConnected').style.display = 'none';
+      document.getElementById('headerConnectBtn').classList.remove('hidden');
+      document.getElementById('headerWalletBtn').classList.add('hidden');
+      showToast('👋 Wallet disconnected', 'var(--muted)');
+    },
     setAmount(val) {
       document.getElementById('tipAmount').value = val;
       document.querySelectorAll('.pill').forEach(p =>
