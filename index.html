@@ -182,6 +182,28 @@
   .empty-state { text-align: center; padding: 32px 0; color: var(--muted); font-size: 13px; line-height: 1.8; }
   .empty-icon { font-size: 32px; margin-bottom: 10px; }
 
+
+  /* Stats grid */
+  .stats-grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 12px; margin-bottom: 4px;
+  }
+  .stat-item {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 14px; padding: 14px 16px;
+    transition: border-color 0.2s;
+  }
+  .stat-item:hover { border-color: var(--accent); }
+  .stat-value {
+    font-family: 'Syne', sans-serif; font-weight: 800; font-size: 22px;
+    background: linear-gradient(135deg, #fff, var(--accent2));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text; margin-bottom: 4px;
+  }
+  .stat-label {
+    font-size: 10px; text-transform: uppercase;
+    letter-spacing: 1.5px; color: var(--muted);
+  }
   /* WalletConnect modal customization handled by the library */
 </style>
 </head>
@@ -220,34 +242,36 @@
     </div>
   </header>
 
-  <!-- Wallet Card -->
+  <!-- Stats Card -->
   <div class="wallet-card">
-    <div class="wallet-label">Your Wallet</div>
-    <div id="walletDisconnected">
-      <div class="wallet-options">
-        <button class="wallet-opt-btn" onclick="APP.openModal()">
-          <div class="wallet-opt-icon">🔵</div> Coinbase
-        </button>
-        <button class="wallet-opt-btn" onclick="APP.openModal()">
-          <div class="wallet-opt-icon">🦊</div> MetaMask
-        </button>
-        <button class="wallet-opt-btn" onclick="APP.openModal()">
-          <div class="wallet-opt-icon">👻</div> Phantom
-        </button>
-        <button class="wallet-opt-btn" onclick="APP.openModal()">
-          <div class="wallet-opt-icon">🛡️</div> Trust
-        </button>
+    <div class="wallet-label">App Stats</div>
+    <div class="stats-grid">
+      <div class="stat-item">
+        <div class="stat-value" id="statTipsCount">0</div>
+        <div class="stat-label">Tips Sent</div>
       </div>
-      <button class="connect-btn" onclick="APP.openModal()">
-        🔗 Connect via WalletConnect
-      </button>
-      <p class="wallet-hint">Works on any mobile browser · 300+ wallets · No app switching needed</p>
+      <div class="stat-item">
+        <div class="stat-value" id="statVolume">0.000</div>
+        <div class="stat-label">ETH Volume</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value" id="statWallets">0</div>
+        <div class="stat-label">Wallets</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value" id="statAvg">0.000</div>
+        <div class="stat-label">Avg Tip</div>
+      </div>
     </div>
-    <div class="wallet-connected" id="walletConnected">
-      <div class="wallet-address" id="walletAddress"></div>
-      <div class="wallet-balance" id="walletBalance">— ETH</div>
-      <div class="wallet-balance-label">Available on Base</div>
-      <button class="disconnect-btn" onclick="APP.disconnect()">Disconnect</button>
+    <div id="walletConnected" style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border);display:none;">
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <div class="wallet-address" id="walletAddress"></div>
+          <div class="wallet-balance" id="walletBalance" style="font-size:20px;margin:4px 0 2px;">— ETH</div>
+          <div class="wallet-balance-label">Available on Base</div>
+        </div>
+        <div style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:20px;">👛</div>
+      </div>
     </div>
   </div>
 
@@ -354,8 +378,7 @@
   // ── Wallet UI ───────────────────────────────────────────────────
   async function refreshUI() {
     const addr = modal.getAddress();
-    document.getElementById('walletDisconnected').style.display = addr ? 'none'  : 'block';
-    document.getElementById('walletConnected').style.display    = addr ? 'block' : 'none';
+    document.getElementById('walletConnected').style.display = addr ? 'block' : 'none';
 
     // Header buttons
     const connectBtn = document.getElementById('headerConnectBtn');
@@ -382,6 +405,18 @@
       connectedAccount = null;
       walletProvider   = null;
     }
+  }
+
+  // ── Update Stats ─────────────────────────────────────────────────
+  function updateStats() {
+    const count = tips.length;
+    const volume = tips.reduce((s, t) => s + t.amount, 0);
+    const walletSet = new Set([...tips.map(t => t.from), ...tips.map(t => t.to)]);
+    const avg = count > 0 ? volume / count : 0;
+    document.getElementById('statTipsCount').textContent = count;
+    document.getElementById('statVolume').textContent = volume.toFixed(3);
+    document.getElementById('statWallets').textContent = walletSet.size;
+    document.getElementById('statAvg').textContent = avg.toFixed(3);
   }
 
   // ── Subscribe ───────────────────────────────────────────────────
@@ -462,6 +497,7 @@
 
         tips.unshift({ from: connectedAccount, to, amount, message: message||null, txHash: tx.hash, time: new Date() });
         renderFeed();
+        updateStats();
 
         document.getElementById('toAddress').value  = '';
         document.getElementById('tipAmount').value  = '';
@@ -489,6 +525,7 @@
     time: new Date(Date.now()-120000),
   });
   renderFeed();
+  updateStats();
   await refreshUI();
 </script>
 </body>
