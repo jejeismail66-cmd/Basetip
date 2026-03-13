@@ -190,9 +190,33 @@
 
   <header>
     <div class="logo">✦ BaseTip</div>
-    <div class="network-badge">
-      <div class="network-dot"></div>
-      Base Mainnet
+    <div style="display:flex;align-items:center;gap:8px;">
+      <div class="network-badge">
+        <div class="network-dot"></div>
+        Base
+      </div>
+      <!-- Disconnected state -->
+      <button id="headerConnectBtn" onclick="APP.openModal()" style="
+        padding: 7px 14px;
+        background: linear-gradient(135deg, #6c5ce7, #5a4bd1);
+        border: none; border-radius: 20px; color: white;
+        font-family: 'DM Mono', monospace; font-size: 11px;
+        font-weight: 500; cursor: pointer; transition: all 0.2s;
+        white-space: nowrap;
+      ">Connect</button>
+      <!-- Connected state -->
+      <button id="headerWalletBtn" onclick="APP.disconnect()" style="
+        display: none;
+        padding: 7px 14px;
+        background: var(--surface2); border: 1px solid var(--border);
+        border-radius: 20px; color: var(--accent2);
+        font-family: 'DM Mono', monospace; font-size: 11px;
+        font-weight: 500; cursor: pointer; transition: all 0.2s;
+        white-space: nowrap; gap: 6px; align-items: center;
+      ">
+        <span id="headerAddr"></span>
+        <span style="color:var(--muted);font-size:10px;">✕</span>
+      </button>
     </div>
   </header>
 
@@ -271,7 +295,7 @@
 
   // ── Config ─────────────────────────────────────────────────────
   // Get your own free Project ID at https://cloud.walletconnect.com
-  const PROJECT_ID = '6f2ee23fa9fe0454e61fc9de751dc6e0';
+  const PROJECT_ID = 'b56e18d47c72ab683b10814fe9495694';
 
   const BASE = {
     chainId: 8453,
@@ -332,6 +356,18 @@
     const addr = modal.getAddress();
     document.getElementById('walletDisconnected').style.display = addr ? 'none'  : 'block';
     document.getElementById('walletConnected').style.display    = addr ? 'block' : 'none';
+
+    // Header buttons
+    const connectBtn = document.getElementById('headerConnectBtn');
+    const walletBtn  = document.getElementById('headerWalletBtn');
+    if (addr) {
+      connectBtn.style.display = 'none';
+      walletBtn.style.display  = 'flex';
+      document.getElementById('headerAddr').textContent = shortAddr(addr);
+    } else {
+      connectBtn.style.display = 'block';
+      walletBtn.style.display  = 'none';
+    }
 
     if (addr) {
       connectedAccount = addr;
