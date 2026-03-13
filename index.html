@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BaseTip — Send love on Base</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --surface2: #1a1a26;
+    --border: #2a2a3d;
+    --accent: #6c5ce7;
+    --accent2: #00cec9;
+    --accent3: #fd79a8;
+    --text: #e8e8f0;
+    --muted: #6b6b85;
+    --success: #00b894;
+    --warning: #fdcb6e;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background:
+      radial-gradient(ellipse 60% 40% at 20% 20%, rgba(108,92,231,0.12) 0%, transparent 60%),
+      radial-gradient(ellipse 50% 50% at 80% 80%, rgba(0,206,201,0.08) 0%, transparent 60%),
+      radial-gradient(ellipse 40% 60% at 50% 50%, rgba(253,121,168,0.05) 0%, transparent 70%);
+    pointer-events: none; z-index: 0;
+  }
+  .container { max-width: 480px; margin: 0 auto; padding: 24px 16px 80px; position: relative; z-index: 1; }
+  header { display: flex; align-items: center; justify-content: space-between; padding: 20px 0 32px; }
+  .logo {
+    font-family: 'Syne', sans-serif; font-weight: 800; font-size: 22px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    letter-spacing: -0.5px;
+  }
+  .network-badge {
+    display: flex; align-items: center; gap: 6px;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 20px; padding: 6px 12px; font-size: 11px; color: var(--accent2); font-weight: 500;
+  }
+  .network-dot { width: 6px; height: 6px; background: var(--accent2); border-radius: 50%; animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1);}50%{opacity:0.5;transform:scale(0.8);} }
+
+  .wallet-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 20px; padding: 24px; margin-bottom: 24px;
+    position: relative; overflow: hidden; transition: border-color 0.3s;
+  }
+  .wallet-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2), var(--accent3));
+  }
+  .wallet-card:hover { border-color: var(--accent); }
+  .wallet-label { font-size: 10px; text-transform: uppercase; letter-spacing: 2px; color: var(--muted); margin-bottom: 14px; }
+
+  .wallet-options { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+  .wallet-opt-btn {
+    display: flex; align-items: center; gap: 8px; padding: 11px 14px;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 12px; color: var(--text); font-family: 'DM Mono', monospace;
+    font-size: 12px; cursor: pointer; transition: all 0.2s;
+  }
+  .wallet-opt-btn:hover { border-color: var(--accent); background: rgba(108,92,231,0.1); }
+  .wallet-opt-icon {
+    width: 22px; height: 22px; border-radius: 6px;
+    display: flex; align-items: center; justify-content: center; font-size: 16px;
+    background: #fff; flex-shrink: 0;
+  }
+
+  .connect-btn {
+    width: 100%; padding: 14px;
+    background: linear-gradient(135deg, var(--accent), #5a4bd1);
+    border: none; border-radius: 12px; color: white;
+    font-family: 'Syne', sans-serif; font-weight: 700; font-size: 15px;
+    cursor: pointer; transition: all 0.2s; letter-spacing: 0.3px;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .connect-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(108,92,231,0.4); }
+  .connect-btn:active { transform: translateY(0); }
+
+  .wallet-hint { font-size: 11px; color: var(--muted); text-align: center; margin-top: 10px; line-height: 1.5; }
+  .wallet-connected { display: none; }
+  .wallet-address { font-family: 'DM Mono', monospace; font-size: 13px; color: var(--accent2); margin-bottom: 4px; }
+  .wallet-balance {
+    font-family: 'Syne', sans-serif; font-size: 28px; font-weight: 800; margin: 8px 0 4px;
+    background: linear-gradient(135deg, #fff, var(--accent2));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  }
+  .wallet-balance-label { font-size: 11px; color: var(--muted); }
+
+  .section-title {
+    font-family: 'Syne', sans-serif; font-weight: 700; font-size: 13px;
+    text-transform: uppercase; letter-spacing: 2px; color: var(--muted); margin-bottom: 16px;
+  }
+  .tip-card { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 24px; margin-bottom: 24px; }
+  .input-group { margin-bottom: 16px; }
+  .input-label { font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted); margin-bottom: 8px; display: block; }
+  .input-field {
+    width: 100%; background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 12px; padding: 14px 16px; color: var(--text);
+    font-family: 'DM Mono', monospace; font-size: 14px; outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .input-field:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(108,92,231,0.15); }
+  .input-field::placeholder { color: var(--muted); }
+  .message-field { resize: none; height: 80px; line-height: 1.5; }
+
+  .amount-pills { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+  .pill {
+    padding: 8px 16px; background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 20px; font-size: 12px; font-family: 'DM Mono', monospace;
+    color: var(--muted); cursor: pointer; transition: all 0.2s; font-weight: 500;
+  }
+  .pill:hover, .pill.active { background: rgba(108,92,231,0.15); border-color: var(--accent); color: var(--accent); }
+
+  .send-btn {
+    width: 100%; padding: 16px;
+    background: linear-gradient(135deg, var(--accent3), #e84393);
+    border: none; border-radius: 12px; color: white;
+    font-family: 'Syne', sans-serif; font-weight: 800; font-size: 16px;
+    cursor: pointer; transition: all 0.2s;
+    display: flex; align-items: center; justify-content: center; gap: 10px; letter-spacing: 0.3px;
+  }
+  .send-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(253,121,168,0.4); }
+  .send-btn:active { transform: translateY(0); }
+  .send-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+
+  .feed-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 16px; padding: 16px 20px; margin-bottom: 12px; animation: slideIn 0.4s ease;
+  }
+  @keyframes slideIn { from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);} }
+  .feed-row { display: flex; align-items: flex-start; gap: 12px; }
+  .feed-avatar {
+    width: 38px; height: 38px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center; font-size: 18px;
+    flex-shrink: 0; background: var(--surface2); border: 1px solid var(--border);
+  }
+  .feed-body { flex: 1; min-width: 0; }
+  .feed-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; gap: 8px; }
+  .feed-names { font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .feed-names strong { color: var(--accent2); font-weight: 500; }
+  .feed-amount { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 14px; color: var(--accent3); white-space: nowrap; flex-shrink: 0; }
+  .feed-message { font-size: 13px; color: var(--text); line-height: 1.5; margin-top: 4px; opacity: 0.85; }
+  .feed-time { font-size: 10px; color: var(--muted); margin-top: 6px; letter-spacing: 0.5px; }
+
+  .toast {
+    position: fixed; bottom: 24px; left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--surface2); border: 1px solid var(--success);
+    border-radius: 12px; padding: 14px 24px; font-size: 13px; color: var(--success);
+    z-index: 9999; transition: transform 0.3s ease; white-space: nowrap; font-weight: 500; pointer-events: none;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  .spinner {
+    display: inline-block; width: 16px; height: 16px;
+    border: 2px solid rgba(255,255,255,0.3); border-top-color: white;
+    border-radius: 50%; animation: spin 0.7s linear infinite;
+  }
+  @keyframes spin { to{transform:rotate(360deg);} }
+
+  .disconnect-btn {
+    background: none; border: none; color: var(--muted); font-size: 11px;
+    cursor: pointer; font-family: 'DM Mono', monospace; padding: 4px 0;
+    text-decoration: underline; margin-top: 10px; display: block;
+  }
+  .disconnect-btn:hover { color: var(--accent3); }
+
+  .empty-state { text-align: center; padding: 32px 0; color: var(--muted); font-size: 13px; line-height: 1.8; }
+  .empty-icon { font-size: 32px; margin-bottom: 10px; }
+
+  /* WalletConnect modal customization handled by the library */
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <div class="logo">✦ BaseTip</div>
+    <div class="network-badge">
+      <div class="network-dot"></div>
+      Base Mainnet
+    </div>
+  </header>
+
+  <!-- Wallet Card -->
+  <div class="wallet-card">
+    <div class="wallet-label">Your Wallet</div>
+    <div id="walletDisconnected">
+      <div class="wallet-options">
+        <button class="wallet-opt-btn" onclick="APP.openModal()">
+          <div class="wallet-opt-icon">🔵</div> Coinbase
+        </button>
+        <button class="wallet-opt-btn" onclick="APP.openModal()">
+          <div class="wallet-opt-icon">🦊</div> MetaMask
+        </button>
+        <button class="wallet-opt-btn" onclick="APP.openModal()">
+          <div class="wallet-opt-icon">👻</div> Phantom
+        </button>
+        <button class="wallet-opt-btn" onclick="APP.openModal()">
+          <div class="wallet-opt-icon">🛡️</div> Trust
+        </button>
+      </div>
+      <button class="connect-btn" onclick="APP.openModal()">
+        🔗 Connect via WalletConnect
+      </button>
+      <p class="wallet-hint">Works on any mobile browser · 300+ wallets · No app switching needed</p>
+    </div>
+    <div class="wallet-connected" id="walletConnected">
+      <div class="wallet-address" id="walletAddress"></div>
+      <div class="wallet-balance" id="walletBalance">— ETH</div>
+      <div class="wallet-balance-label">Available on Base</div>
+      <button class="disconnect-btn" onclick="APP.disconnect()">Disconnect</button>
+    </div>
+  </div>
+
+  <!-- Tip Form -->
+  <div class="section-title">Send a Tip</div>
+  <div class="tip-card">
+    <div class="input-group">
+      <label class="input-label">To (wallet address)</label>
+      <input class="input-field" id="toAddress" placeholder="0x…" type="text" autocomplete="off" spellcheck="false">
+    </div>
+    <div class="input-group">
+      <label class="input-label">Amount (ETH)</label>
+      <input class="input-field" id="tipAmount" placeholder="0.001" type="number" min="0" step="0.0001">
+      <div class="amount-pills">
+        <div class="pill" data-val="0.0005" onclick="APP.setAmount(0.0005)">0.0005</div>
+        <div class="pill" data-val="0.001"  onclick="APP.setAmount(0.001)">0.001</div>
+        <div class="pill" data-val="0.005"  onclick="APP.setAmount(0.005)">0.005</div>
+        <div class="pill" data-val="0.01"   onclick="APP.setAmount(0.01)">0.01</div>
+      </div>
+    </div>
+    <div class="input-group">
+      <label class="input-label">Message (optional)</label>
+      <textarea class="input-field message-field" id="tipMessage" placeholder="Keep building! ✨"></textarea>
+    </div>
+    <button class="send-btn" id="sendBtn" onclick="APP.sendTip()">✦ Send Tip</button>
+  </div>
+
+  <!-- Feed -->
+  <div class="section-title">Recent Tips</div>
+  <div id="feed">
+    <div class="empty-state">
+      <div class="empty-icon">🌀</div>
+      Tips you send will appear here.<br>Connect your wallet to get started.
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- Load Web3Modal + Ethers as ESM -->
+<script type="module">
+  import { createWeb3Modal, defaultConfig } from 'https://esm.sh/@web3modal/ethers@4.2.3';
+  import { BrowserProvider, parseEther } from 'https://esm.sh/ethers@6.11.1';
+
+  // ── Config ─────────────────────────────────────────────────────
+  // Get your own free Project ID at https://cloud.walletconnect.com
+  const PROJECT_ID = 'b56e18d47c72ab683b10814fe9495694';
+
+  const BASE = {
+    chainId: 8453,
+    name: 'Base',
+    currency: 'ETH',
+    explorerUrl: 'https://basescan.org',
+    rpcUrl: 'https://mainnet.base.org',
+  };
+
+  const modal = createWeb3Modal({
+    ethersConfig: defaultConfig({
+      metadata: {
+        name: 'BaseTip',
+        description: 'Send tips on Base',
+        url: window.location.origin,
+        icons: ['https://avatars.githubusercontent.com/u/37784886'],
+      },
+    }),
+    chains: [BASE],
+    projectId: PROJECT_ID,
+    themeMode: 'dark',
+    themeVariables: {
+      '--w3m-accent': '#6c5ce7',
+      '--w3m-border-radius-master': '3px',
+      '--w3m-font-family': "'DM Mono', monospace",
+    },
+    featuredWalletIds: [
+      'fd20dc426fb37566d803205b19bbc1d4096b248ac04548e3cfb6b3a38bd033aa', // Coinbase Wallet
+      'c57ca95b47569778a828d19178114f4db188b89b763c899ba0be274e97267d96', // MetaMask
+      'a797aa35c0fadbfc1a53e7f675162ed5226968b44a19ee3d24385c64d1d3c393', // Phantom
+    ],
+  });
+
+  // ── State ───────────────────────────────────────────────────────
+  let connectedAccount = null;
+  let walletProvider   = null;
+  const tips = [];
+  const EMOJIS = ['🚀','⚡','🌊','🔥','✨','🎯','💫','🌸','🎉','🦋'];
+
+  // ── Helpers ─────────────────────────────────────────────────────
+  const shortAddr = a => a.slice(0,6)+'…'+a.slice(-4);
+
+  function showToast(msg, color = 'var(--success)', dur = 3500) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.style.borderColor = color;
+    t.style.color = color;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), dur);
+  }
+
+  function escapeHTML(s) {
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  // ── Wallet UI ───────────────────────────────────────────────────
+  async function refreshUI() {
+    const addr = modal.getAddress();
+    document.getElementById('walletDisconnected').style.display = addr ? 'none'  : 'block';
+    document.getElementById('walletConnected').style.display    = addr ? 'block' : 'none';
+
+    if (addr) {
+      connectedAccount = addr;
+      walletProvider   = modal.getWalletProvider();
+      document.getElementById('walletAddress').textContent = shortAddr(addr);
+      try {
+        const p   = new BrowserProvider(walletProvider);
+        const bal = await p.getBalance(addr);
+        document.getElementById('walletBalance').textContent = (Number(bal)/1e18).toFixed(5)+' ETH';
+      } catch { document.getElementById('walletBalance').textContent = '— ETH'; }
+    } else {
+      connectedAccount = null;
+      walletProvider   = null;
+    }
+  }
+
+  // ── Subscribe ───────────────────────────────────────────────────
+  modal.subscribeEvents(async e => {
+    if (e.data.event === 'CONNECT_SUCCESS') { await refreshUI(); showToast('✅ Wallet connected!'); }
+    if (e.data.event === 'DISCONNECT_SUCCESS') { await refreshUI(); showToast('👋 Disconnected', 'var(--muted)'); }
+  });
+  modal.subscribeState(() => refreshUI());
+
+  // ── Feed ────────────────────────────────────────────────────────
+  function renderFeed() {
+    const el = document.getElementById('feed');
+    if (!tips.length) {
+      el.innerHTML = '<div class="empty-state"><div class="empty-icon">🌀</div>Tips you send will appear here.<br>Connect your wallet to get started.</div>';
+      return;
+    }
+    el.innerHTML = tips.map((tip, i) => {
+      const emoji = EMOJIS[i % EMOJIS.length];
+      const ts    = tip.time.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+      return `<div class="feed-card">
+        <div class="feed-row">
+          <div class="feed-avatar">${emoji}</div>
+          <div class="feed-body">
+            <div class="feed-header">
+              <div class="feed-names"><strong>${shortAddr(tip.from)}</strong> → <strong>${shortAddr(tip.to)}</strong></div>
+              <div class="feed-amount">+${tip.amount} ETH</div>
+            </div>
+            ${tip.message ? `<div class="feed-message">${escapeHTML(tip.message)}</div>` : ''}
+            <div class="feed-time">${ts} · <a href="https://basescan.org/tx/${tip.txHash}" target="_blank" style="color:var(--accent);text-decoration:none;">${tip.txHash.slice(0,10)}…</a></div>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  // ── APP global object (for onclick= handlers) ───────────────────
+  window.APP = {
+    openModal: () => modal.open(),
+    disconnect: () => modal.disconnect(),
+    setAmount(val) {
+      document.getElementById('tipAmount').value = val;
+      document.querySelectorAll('.pill').forEach(p =>
+        p.classList.toggle('active', parseFloat(p.dataset.val) === val));
+    },
+    async sendTip() {
+      if (!connectedAccount || !walletProvider) {
+        showToast('👛 Connect your wallet first', 'var(--warning)'); return;
+      }
+      const to      = document.getElementById('toAddress').value.trim();
+      const amount  = parseFloat(document.getElementById('tipAmount').value);
+      const message = document.getElementById('tipMessage').value.trim();
+
+      if (!to || !to.startsWith('0x') || to.length !== 42) {
+        showToast('❌ Enter a valid 0x address', 'var(--accent3)'); return;
+      }
+      if (!amount || amount <= 0) {
+        showToast('❌ Enter an amount > 0', 'var(--accent3)'); return;
+      }
+
+      const btn = document.getElementById('sendBtn');
+      btn.disabled = true;
+      btn.innerHTML = '<div class="spinner"></div> Confirm in wallet…';
+
+      try {
+        // Ensure Base chain
+        try {
+          await walletProvider.request({method:'wallet_switchEthereumChain',params:[{chainId:'0x2105'}]});
+        } catch(e) {
+          if (e.code === 4902) await walletProvider.request({
+            method:'wallet_addEthereumChain',
+            params:[{chainId:'0x2105',chainName:'Base',nativeCurrency:{name:'Ether',symbol:'ETH',decimals:18},rpcUrls:['https://mainnet.base.org'],blockExplorerUrls:['https://basescan.org']}]
+          });
+        }
+
+        const provider = new BrowserProvider(walletProvider);
+        const signer   = await provider.getSigner();
+        const tx       = await signer.sendTransaction({ to, value: parseEther(amount.toString()) });
+
+        tips.unshift({ from: connectedAccount, to, amount, message: message||null, txHash: tx.hash, time: new Date() });
+        renderFeed();
+
+        document.getElementById('toAddress').value  = '';
+        document.getElementById('tipAmount').value  = '';
+        document.getElementById('tipMessage').value = '';
+        document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+
+        await refreshUI();
+        showToast('🎉 Tip sent! '+tx.hash.slice(0,10)+'…', 'var(--success)', 5000);
+      } catch(err) {
+        if (err.code === 4001 || err.code === 'ACTION_REJECTED') showToast('🚫 Cancelled', 'var(--muted)');
+        else showToast('❌ '+(err.shortMessage||err.message||'Failed'), 'var(--accent3)');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '✦ Send Tip';
+      }
+    }
+  };
+
+  // ── Demo seed ───────────────────────────────────────────────────
+  tips.push({
+    from:'0xdemo000000000000000000000000000000CAFE',
+    to:'0xdemo000000000000000000000000000000BABE',
+    amount:0.001, message:'Thanks for building on Base! 🔵',
+    txHash:'0xdemo_tx_example_abc123456789abcdef',
+    time: new Date(Date.now()-120000),
+  });
+  renderFeed();
+  await refreshUI();
+</script>
+</body>
+</html>
